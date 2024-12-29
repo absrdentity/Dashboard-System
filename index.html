@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="ind">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KELOLA</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+    
+    <body>
+
+    <div class="navbar">
+        <h1>KELOLA</h1>
+        <span>User</span>
+    </div>
+
+    <div class="sidebar">
+        <ul>
+            <li><a href="#overview">Ringkasan</a></li>
+            <li><a href="#analytics">Analisis</a></li>
+            <li><a href="#transactions">Transaksi</a></li>
+            <li><a href="#reports">Laporan</a></li>
+            <li><a href="#settings">Settings</a></li>
+        </ul>
+    </div>
+
+    <div class="main-content">
+        <div class="card" id="overview">
+            <h2>Ringkasan</h2>
+            <p>Selamat Datang di KELOLA. Berikut data keuangan Anda.</p>
+            <table id="overviewTable">
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Pemasukan</td>
+                        <td id="incomeValue">Rp 0</td>
+                    </tr>
+                    <tr>
+                        <td>Pengeluaran</td>
+                        <td id="expenseValue">Rp 0</td>
+                    </tr>
+                    <tr>
+                        <td>Keuntungan/Kerugian</td>
+                        <td id="profitLossValue">Rp 0</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card" id="analytics">
+            <h2>Analisis</h2>
+            <canvas class="chart" id="analyticsChart"></canvas>
+        </div>
+
+        <div class="card" id="transactions">
+            <h2>Transaksi</h2>
+            <div class="transactions-buttons">
+                <button onclick="addNewTransaction()">Tambah Transaksi Baru</button>
+            </div>
+        </div>
+
+        <div id="reportSection">
+            <h2>Laporan Transaksi</h2>
+            <p>Tidak ada transaksi baru</p>
+        </div>
+
+        <div class="card" id="settings">
+            <h2>Pengaturan Latar</h2>
+            <div class="form-group">
+                <label for="themeToggle" style="margin-right: 10px;">Dark Mode</label>
+                <input type="checkbox" id="themeToggle" onclick="toggleTheme()" />
+            </div>
+        </div>
+        
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Navigasi Sidebar
+        document.querySelectorAll('.sidebar ul li a').forEach(link => {
+            link.addEventListener('click', event => {
+                event.preventDefault();
+                const targetId = link.getAttribute('href').substring(1);
+                document.getElementById(targetId).scrollIntoView({ behavior: 'smooth' });
+            });
+        });
+        // Array untuk menyimpan riwayat transaksi
+        const transactionHistory = [];
+        // Data untuk Grafik
+        let transactionData = {
+            income: 0,
+            expense: 0
+        };
+
+        // Inisialisasi Grafik
+        const ctx = document.getElementById('analyticsChart').getContext('2d');
+        let analyticsChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Income', 'Expense'],
+                datasets: [{
+                    label: 'Transaction Statistics',
+                    data: [transactionData.income, transactionData.expense],
+                    backgroundColor: ['rgba(75, 192, 192, 0.5)', 'rgba(255, 99, 132, 0.5)'],
+                    borderColor: ['rgba(75, 192, 192, 1)', 'rgba(255, 99, 132, 1)'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        function addNewTransaction() {
+    // Hapus formulir transaksi sebelumnya jika ada
+    const existingForm = document.getElementById('transactionFormCard');
+    if (existingForm) {
+        existingForm.remove();
+    }
+
+    // Tambahkan formulir transaksi baru
+    const transactionFormHTML = `
+        <div class="card" id="transactionFormCard">
+            <h2>Transaksi</h2>
+            <form id="transactionForm">
+                <div class="form-group">
+                    <label for="transactionType">Jenis Transaksi</label>
+                    <select id="transactionType" name="transactionType">
+                        <option value="income">Pemasukan</option>
+                        <option value="expense">Pengeluaran</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="transactionAmount">Jumlah</label>
+                    <input type="number" id="transactionAmount" name="transactionAmount" placeholder="Enter amount">
+                </div>
+                <div class="form-group">
+                    <label for="paymentMethod">Metode Pembayaran</label>
+                    <select id="paymentMethod" name="paymentMethod">
+                        <option value="Tunai">Tunai</option>
+                        <option value="Qris">Qris</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="button" onclick="submitTransaction()">Submit Transaction</button>
+                </div>
+            </form>
+        </div>
+    `;
+    document.getElementById('transactions').insertAdjacentHTML('beforeend', transactionFormHTML);
+}
+
+    // Fungsi untuk menambah transaksi baru ke dalam riwayat
+    function submitTransaction() {
+    const type = document.getElementById('transactionType').value;
+    const amount = parseFloat(document.getElementById('transactionAmount').value);
+    const paymentMethod = document.getElementById('paymentMethod').value;
+
+    // Validasi Input
+    if (!type || isNaN(amount) || !paymentMethod) {
+        alert("Please fill in all fields.");
+        return;
+    }
+
+    // Tambahkan transaksi ke dalam array riwayat
+    transactionHistory.push({ type, amount, paymentMethod });
+
+    // Perbarui Data Statistik
+    if (type === 'income') {
+        transactionData.income += amount;
+    } else if (type === 'expense') {
+        transactionData.expense += amount;
+    }
+
+    // Perbarui Grafik
+    analyticsChart.data.datasets[0].data = [transactionData.income, transactionData.expense];
+    analyticsChart.update();
+
+    // Perbarui Tabel Statistik
+    const incomeElem = document.getElementById('incomeValue');
+    const expenseElem = document.getElementById('expenseValue');
+    const profitLossElem = document.getElementById('profitLossValue');
+
+    let currentProfitLoss = transactionData.income - transactionData.expense;
+    incomeElem.innerText = `Rp ${transactionData.income.toLocaleString('id-ID')}`;
+    expenseElem.innerText = `Rp ${transactionData.expense.toLocaleString('id-ID')}`;
+    profitLossElem.innerText = `Rp ${currentProfitLoss.toLocaleString('id-ID')}`;
+
+    // Perbarui Riwayat Transaksi di Laporan
+    updateTransactionReport();
+
+    // Tampilkan Pesan Berhasil
+    alert(`Transaction Added: ${type}, Amount: Rp ${amount.toLocaleString('id-ID')}, Payment Method: ${paymentMethod}`);
+
+    // Fungsi untuk memperbarui laporan transaksi
+function updateTransactionReport() {
+    const reportSection = document.getElementById('reportSection');
+
+    // Hapus tabel sebelumnya jika ada
+    const existingTable = document.getElementById('transactionReportTable');
+    if (existingTable) {
+        existingTable.remove();
+    }
+
+    if (transactionHistory.length === 0) {
+        reportSection.innerHTML = "<p>No transactions to display.</p>";
+        return;
+    }
+
+    // Buat tabel baru untuk riwayat transaksi
+    let tableHTML = `
+        <table id="transactionReportTable" style="margin-top: 20px; width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background-color: #f2f2f2; text-align: left;">
+                    <th style="padding: 8px; border: 1px solid #ddd;">Transaction Type</th>
+                    <th style="padding: 8px; border: 1px solid #ddd;">Amount</th>
+                    <th style="padding: 8px; border: 1px solid #ddd;">Payment Method</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    transactionHistory.forEach((transaction) => {
+        tableHTML += `
+            <tr>
+                <td style="padding: 8px; border: 1px solid #ddd;">${transaction.type}</td>
+                <td style="padding: 8px; border: 1px solid #ddd;">Rp ${transaction.amount.toLocaleString('id-ID')}</td>
+                <td style="padding: 8px; border: 1px solid #ddd;">${transaction.paymentMethod}</td>
+            </tr>
+        `;
+    });
+
+    tableHTML += `
+            </tbody>
+        </table>
+    `;
+
+    // Tambahkan tabel ke dalam laporan
+    reportSection.innerHTML = tableHTML;
+}
+
+// Fungsi untuk membuat form transaksi baru
+function addNewTransaction() {
+    // Periksa apakah formulir sudah ada
+    const existingForm = document.getElementById('transactionFormCard');
+    if (existingForm) {
+        alert("Form already open.");
+        return;
+    }
+
+    // Buat Form
+    const transactionFormHTML = `
+        <div class="card" id="transactionFormCard">
+            <h2>Tambahkan Transaksi</h2>
+            <form id="transactionForm">
+                <div class="form-group">
+                    <label for="transactionType">Jenis Transaksi</label>
+                    <select id="transactionType" name="transactionType">
+                        <option value="income">Pemasukan</option>
+                        <option value="expense">Pengeluaran</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="transactionAmount">Jumlah</label>
+                    <input type="number" id="transactionAmount" name="transactionAmount" placeholder="Enter amount">
+                </div>
+                <div class="form-group">
+                    <label for="paymentMethod">Metode Pembayaran</label>
+                    <select id="paymentMethod" name="paymentMethod">
+                        <option value="Tunai">Tunai</option>
+                        <option value="Qris">Qris</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="button" onclick="submitTransaction()">Submit Transaction</button>
+                </div>
+            </form>
+        </div>
+    `;
+    document.getElementById('transactions').insertAdjacentHTML('beforeend', transactionFormHTML);
+}
+
+    // Bersihkan Formulir Setelah Submit
+    document.getElementById('transactionForm').reset();
+}
+
+    // Fungsi untuk menampilkan riwayat transaksi
+    function viewTransactionHistory() {
+    const historySection = document.getElementById('transactions');
+
+    // Hapus tabel sebelumnya jika ada
+    const existingTable = document.getElementById('transactionHistoryTable');
+    if (existingTable) {
+        existingTable.remove();
+    }
+
+    if (transactionHistory.length === 0) {
+        alert("No transactions available.");
+        return;
+    }
+
+    // Buat tabel baru untuk riwayat transaksi
+    let tableHTML = `
+        <table id="transactionHistoryTable" style="margin-top: 20px; width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background-color: #f2f2f2; text-align: left;">
+                    <th style="padding: 8px; border: 1px solid #ddd;">Type</th>
+                    <th style="padding: 8px; border: 1px solid #ddd;">Amount</th>
+                    <th style="padding: 8px; border: 1px solid #ddd;">Payment Method</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    transactionHistory.forEach((transaction) => {
+        tableHTML += `
+            <tr>
+                <td style="padding: 8px; border: 1px solid #ddd;">${transaction.type}</td>
+                <td style="padding: 8px; border: 1px solid #ddd;">Rp ${transaction.amount.toLocaleString('id-ID')}</td>
+                <td style="padding: 8px; border: 1px solid #ddd;">${transaction.paymentMethod}</td>
+            </tr>
+        `;
+    });
+
+    tableHTML += `
+            </tbody>
+        </table>
+    `;
+
+    // Tambahkan tabel ke dalam halaman
+    historySection.insertAdjacentHTML('beforeend', tableHTML);
+}
+
+// Fungsi untuk membuat form transaksi baru
+function addNewTransaction() {
+    // Periksa apakah formulir sudah ada
+    const existingForm = document.getElementById('transactionFormCard');
+    if (existingForm) {
+        alert("Form already open.");
+        return;
+    }
+
+    // Buat Form
+    const transactionFormHTML = `
+        <div class="card" id="transactionFormCard">
+            <h2>Add New Transaction</h2>
+            <form id="transactionForm">
+                <div class="form-group">
+                    <label for="transactionType">Transaction Type</label>
+                    <select id="transactionType" name="transactionType">
+                        <option value="income">Income</option>
+                        <option value="expense">Expense</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="transactionAmount">Amount</label>
+                    <input type="number" id="transactionAmount" name="transactionAmount" placeholder="Enter amount">
+                </div>
+                <div class="form-group">
+                    <label for="paymentMethod">Payment Method</label>
+                    <select id="paymentMethod" name="paymentMethod">
+                        <option value="Tunai">Tunai</option>
+                        <option value="Qris">Qris</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="button" onclick="submitTransaction()">Submit Transaction</button>
+                </div>
+            </form>
+        </div>
+    `;
+    document.getElementById('transactions').insertAdjacentHTML('beforeend', transactionFormHTML);
+}
+
+
+        function generateTransactionReport() {
+            console.log("Transaction report is being generated.");
+            alert("Generating Transaction Report!");
+        }
+
+
+        
+
+        // Theme functionality
+        function toggleTheme() {
+    const themeToggle = document.getElementById('themeToggle');
+    const isDarkMode = themeToggle.checked;
+
+    if (isDarkMode) {
+        document.body.classList.add('dark');
+        localStorage.setItem('theme', 'dark');
+    } else {
+        document.body.classList.remove('dark');
+        localStorage.setItem('theme', 'light');
+    }
+}
+
+// Apply saved theme on page load
+window.onload = () => {
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    const themeToggle = document.getElementById('themeToggle');
+
+    if (savedTheme === 'dark') {
+        document.body.classList.add('dark');
+        themeToggle.checked = true;
+    } else {
+        document.body.classList.remove('dark');
+        themeToggle.checked = false;
+    }
+};
+
+        // Apply saved theme on load
+        window.onload = () => {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.getElementById('theme').value = savedTheme;
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark');
+            }
+        };
+    </script>
+</body>
+</html>
